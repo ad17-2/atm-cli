@@ -10,17 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-
 import com.atm.command.SessionHolder;
 import com.atm.command.TransferCommand;
 import com.atm.exception.CommandException;
@@ -29,6 +18,15 @@ import com.atm.model.User;
 import com.atm.service.session.SessionService;
 import com.atm.service.transaction.TransactionService;
 import com.atm.service.user.UserService;
+import java.math.BigDecimal;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -49,8 +47,7 @@ class TransferCommandTest {
   @BeforeEach
   void setUp() {
     transferCommand =
-        new TransferCommand(
-            userService, transactionService, sessionHolder, sessionService);
+        new TransferCommand(userService, transactionService, sessionHolder, sessionService);
   }
 
   @Test
@@ -118,7 +115,7 @@ class TransferCommandTest {
     when(sessionHolder.getCurrentSession()).thenReturn(session);
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
-    
+
     CommandException exception =
         assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
     assertEquals("Insufficient balance", exception.getMessage());

@@ -42,58 +42,55 @@ class DepositCommandTest {
   }
 
   @Test
-  void execute_InvalidAmountLessThanOne_ThrowsException() {
-    assertThrows(CommandException.class, () -> command.execute("0.00"));
-    verifyNoInteractions(transactionService);
-  }
-
-  @Test
-  void execute_NoLoggedInUser_ThrowsException() {
+  void execute_hasNoActiveSession_ThrowsException() {
 
     when(sessionHolder.getCurrentSession()).thenReturn(null);
 
-    assertThrows(CommandException.class, () -> command.execute("100.00"));
+    CommandException exception =
+        assertThrows(CommandException.class, () -> command.execute("1.00"));
+    assertEquals("No active session, Please login first!", exception.getMessage());
     verifyNoInteractions(transactionService);
   }
 
   @Test
-  void execute_LoggedInUserExpiredSession_ThrowsException() {
+  void execute_hasExpiredSession_ThrowsException() {
 
     Session session = mock(Session.class);
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
     when(sessionHolder.getCurrentSession()).thenReturn(session);
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(false);
 
-    assertThrows(CommandException.class, () -> command.execute("100.00"));
-    verifyNoInteractions(transactionService);
-  }
-
-  @Test
-  void execute_InvalidAmount_ThrowsException() {
-
-    Session session = mock(Session.class);
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
-    when(sessionHolder.getCurrentSession()).thenReturn(session);
-
     CommandException exception =
-        assertThrows(CommandException.class, () -> command.execute("invalid"));
+        assertThrows(CommandException.class, () -> command.execute("1.00"));
     assertEquals("No active session, Please login first!", exception.getMessage());
-
     verifyNoInteractions(transactionService);
   }
 
   @Test
-  void execute_ValidAmount_Success() {
+  void execute_hasActiveSession_invalidAmountFormat_ThrowsException() {
+      
+      Session session = mock(Session.class);
+      when(sessionHolder.getCurrentSession()).thenReturn(session);
+      when(session.getUserId()).thenReturn(TEST_USER_ID);
+      when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
+  
+      CommandException exception =
+          assertThrows(CommandException.class, () -> command.execute("-asd"));
+      assertEquals("Invalid amount format", exception.getMessage());
+      verifyNoInteractions(transactionService);
+  }
+
+  @Test
+  void execute_hasActiveSession_validAmountFormat_Success() {
     Session session = mock(Session.class);
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
     when(sessionHolder.getCurrentSession()).thenReturn(session);
+    when(session.getUserId()).thenReturn(TEST_USER_ID);
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
 
-    when(balanceService.getBalance(1L)).thenReturn(new BigDecimal("150.00"));
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(BigDecimal.valueOf(1000));
 
-    command.execute("100.00");
+    command.execute("100");
 
-    verify(transactionService).deposit(1L, new BigDecimal("100.00"));
-    verify(balanceService).getBalance(1L);
+    verify(transactionService).deposit(TEST_USER_ID, BigDecimal.valueOf(100));
+    verify(balanceService).getBalance(TEST_USER_ID);
   }
 }

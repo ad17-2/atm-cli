@@ -45,7 +45,7 @@ public class DepositCommand implements Command {
       BigDecimal depositAmount = null;
 
       try {
-        depositAmount = new BigDecimal(args[1]);
+        depositAmount = new BigDecimal(args[0]);
       } catch (NumberFormatException e) {
         throw new CommandException("Invalid amount format");
       }

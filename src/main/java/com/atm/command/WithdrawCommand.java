@@ -45,7 +45,7 @@ public class WithdrawCommand implements Command {
       BigDecimal withdrawAmount = null;
 
       try {
-        withdrawAmount = new BigDecimal(args[1]);
+        withdrawAmount = new BigDecimal(args[0]);
       } catch (NumberFormatException e) {
         throw new CommandException("Invalid amount format");
       }

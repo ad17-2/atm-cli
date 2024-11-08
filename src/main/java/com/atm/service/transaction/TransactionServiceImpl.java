@@ -15,22 +15,18 @@ public class TransactionServiceImpl implements TransactionService {
 
   @Override
   public void deposit(Long userId, BigDecimal amount) {
-    try {
-      log.info("Attempting to deposit {} for user {}", amount, userId);
+    log.info("Attempting to deposit {} for user {}", amount, userId);
 
-      if (amount.compareTo(BigDecimal.ONE) <= 0) {
-        throw new IllegalArgumentException("Invalid amount, must be grater than 1");
-      }
-
-      BigDecimal currentBalance = balanceService.getBalance(userId);
-      BigDecimal newBalance = currentBalance.add(amount);
-
-      database.createTransaction(userId, amount, "DEPOSIT");
-
-      log.info("Deposit successful. New balance: {}", newBalance);
-    } catch (Exception e) {
-      log.error("Failed to deposit money", e);
+    if (amount.compareTo(BigDecimal.ONE) <= 0) {
+      throw new IllegalArgumentException("Invalid amount, must be grater than 1");
     }
+
+    BigDecimal currentBalance = balanceService.getBalance(userId);
+    BigDecimal newBalance = currentBalance.add(amount);
+
+    database.createTransaction(userId, amount, "DEPOSIT");
+
+    log.info("Deposit successful. New balance: {}", newBalance);
   }
 
   @Override
