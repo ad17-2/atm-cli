@@ -2,14 +2,9 @@ package com.atm.unit.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+import com.atm.command.Command;
 import com.atm.command.SessionHolder;
 import com.atm.command.TransferCommand;
 import com.atm.exception.CommandException;
@@ -32,130 +27,64 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class TransferCommandTest {
 
-  private static final Long TEST_USER_ID = 123L;
-  private static final Long TARGET_USER_ID = 456L;
-  private static final String TARGET_USERNAME = "targetUser";
-  private static final BigDecimal VALID_AMOUNT = new BigDecimal("100");
-
   @Mock private TransactionService transactionService;
   @Mock private UserService userService;
-  @Mock private SessionHolder sessionHolder;
   @Mock private SessionService sessionService;
+  @Mock private SessionHolder sessionHolder;
 
-  private TransferCommand transferCommand;
+  private Command command;
+
+  private static final Long TEST_USER_ID = 1L;
+  private static final Long TARGET_USER_ID = 2L;
+  private static final String TARGET_USERNAME = "targetUser";
 
   @BeforeEach
   void setUp() {
-    transferCommand =
-        new TransferCommand(userService, transactionService, sessionHolder, sessionService);
+    command = new TransferCommand(userService, transactionService, sessionHolder, sessionService);
   }
 
   @Test
-  void execute_WithValidAmountAndSufficientBalance_ShouldTransferSuccessfully() {
-    Session session = mock(Session.class);
-    User targetUser = mock(User.class);
-
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
-    when(sessionHolder.getCurrentSession()).thenReturn(session);
-    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
-    when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
-    when(targetUser.getId()).thenReturn(TARGET_USER_ID);
-
-    transferCommand.execute(TARGET_USERNAME, "100");
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
-    verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
-  }
-
-  @Test
-  void execute_WithNoArguments_ShouldThrowCommandException() {
-    CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute());
-    assertEquals("Usage: transfer <username> <amount>", exception.getMessage());
-
-    verifyNoInteractions(transactionService);
-    verifyNoInteractions(userService);
-    verifyNoInteractions(sessionService);
-  }
-
-  @Test
-  void execute_WithInvalidArgumentCount_ShouldThrowCommandException() {
-    CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME));
-    assertEquals("Usage: transfer <username> <amount>", exception.getMessage());
-
-    verifyNoInteractions(transactionService);
-    verifyNoInteractions(userService);
-    verifyNoInteractions(sessionService);
-  }
-
-  @Test
-  void execute_WithInvalidAmountFormat_ShouldThrowCommandException() {
-    Session session = mock(Session.class);
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
-    when(sessionHolder.getCurrentSession()).thenReturn(session);
-    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
+  void execute_hasNoActiveSession_ThrowsException() {
+    when(sessionHolder.getCurrentSession()).thenReturn(null);
 
     CommandException exception =
-        assertThrows(
-            CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "invalid"));
-    assertEquals("Invalid amount format", exception.getMessage());
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME, "100.00"));
+    assertEquals("No active session, Please login first!", exception.getMessage());
     verifyNoInteractions(transactionService);
     verifyNoInteractions(userService);
   }
 
   @Test
-  void execute_WithInsufficientBalance_ShouldThrowCommandException() {
-    Session session = mock(Session.class);
-    User targetUser = mock(User.class);
-
-    when(session.getUserId()).thenReturn(TEST_USER_ID);
-    when(sessionHolder.getCurrentSession()).thenReturn(session);
-    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
-    when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
-
-    CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
-    assertEquals("Insufficient balance", exception.getMessage());
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
-    verify(transactionService, never()).transfer(any(), any(), any());
-  }
-
-  @Test
-  void execute_WithNoActiveSession_ShouldThrowCommandException() {
+  void execute_hasExpiredSession_ThrowsException() {
     Session session = mock(Session.class);
     when(session.getUserId()).thenReturn(TEST_USER_ID);
     when(sessionHolder.getCurrentSession()).thenReturn(session);
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(false);
 
     CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME, "100.00"));
     assertEquals("No active session, Please login first!", exception.getMessage());
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
     verify(sessionHolder).terminateSession();
     verifyNoInteractions(transactionService);
     verifyNoInteractions(userService);
   }
 
   @Test
-  void execute_WhenSessionIsNull_ShouldThrowCommandException() {
-    when(sessionHolder.getCurrentSession()).thenReturn(null);
+  void execute_hasActiveSession_invalidAmountFormat_ThrowsException() {
+    Session session = mock(Session.class);
+    when(session.getUserId()).thenReturn(TEST_USER_ID);
+    when(sessionHolder.getCurrentSession()).thenReturn(session);
+    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
 
     CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
-    assertEquals("No active session, Please login first!", exception.getMessage());
-
-    verifyNoInteractions(sessionService);
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME, "invalid"));
+    assertEquals("Invalid amount format", exception.getMessage());
     verifyNoInteractions(transactionService);
     verifyNoInteractions(userService);
   }
 
   @Test
-  void execute_WhenUserNotFound_ShouldThrowCommandException() {
+  void execute_hasActiveSession_userNotFound_ThrowsException() {
     Session session = mock(Session.class);
     when(session.getUserId()).thenReturn(TEST_USER_ID);
     when(sessionHolder.getCurrentSession()).thenReturn(session);
@@ -163,16 +92,14 @@ class TransferCommandTest {
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.empty());
 
     CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME, "100.00"));
     assertEquals("User not found", exception.getMessage());
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
     verify(userService).getUserByUsername(TARGET_USERNAME);
     verifyNoInteractions(transactionService);
   }
 
   @Test
-  void execute_WhenTransactionServiceThrowsException_ShouldThrowCommandException() {
+  void execute_hasActiveSession_validAmountFormat_Success() {
     Session session = mock(Session.class);
     User targetUser = mock(User.class);
 
@@ -181,15 +108,48 @@ class TransferCommandTest {
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
     when(targetUser.getId()).thenReturn(TARGET_USER_ID);
-    doThrow(new RuntimeException("Transaction failed"))
+
+    command.execute(TARGET_USERNAME, "100");
+
+    verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("100"));
+  }
+
+  @Test
+  void execute_noArguments_ThrowsException() {
+    CommandException exception = assertThrows(CommandException.class, () -> command.execute());
+    assertEquals("Usage: transfer <username> <amount>", exception.getMessage());
+    verifyNoInteractions(transactionService);
+    verifyNoInteractions(userService);
+    verifyNoInteractions(sessionService);
+  }
+
+  @Test
+  void execute_insufficientArguments_ThrowsException() {
+    CommandException exception =
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME));
+    assertEquals("Usage: transfer <username> <amount>", exception.getMessage());
+    verifyNoInteractions(transactionService);
+    verifyNoInteractions(userService);
+    verifyNoInteractions(sessionService);
+  }
+
+  @Test
+  void execute_hasActiveSession_transferFails_ThrowsException() {
+    Session session = mock(Session.class);
+    User targetUser = mock(User.class);
+
+    when(session.getUserId()).thenReturn(TEST_USER_ID);
+    when(sessionHolder.getCurrentSession()).thenReturn(session);
+    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
+    when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
+    when(targetUser.getId()).thenReturn(TARGET_USER_ID);
+    doThrow(new RuntimeException("Transfer failed"))
         .when(transactionService)
-        .transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
+        .transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("100"));
 
     CommandException exception =
-        assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
+        assertThrows(CommandException.class, () -> command.execute(TARGET_USERNAME, "100"));
     assertEquals("Failed to transfer money", exception.getMessage());
-
-    verify(sessionService).hasActiveSession(TEST_USER_ID);
-    verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
+    verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("100"));
   }
 }

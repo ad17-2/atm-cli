@@ -1,10 +1,8 @@
 package com.atm.unit.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.atm.database.Database;
 import com.atm.exception.InsufficientFundsException;
@@ -29,86 +27,124 @@ class TransactionServiceTest {
 
   private TransactionService transactionService;
 
+  private static final Long TEST_USER_ID = 1L;
+  private static final Long TARGET_USER_ID = 2L;
+
   @BeforeEach
   void setUp() {
     transactionService = new TransactionServiceImpl(database, balanceService);
   }
 
   @Test
-  void deposit_ValidAmount_Success() {
+  void deposit_amountLessThanOne_ThrowsException() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> transactionService.deposit(TEST_USER_ID, new BigDecimal("0.5")));
 
-    Long userId = 1L;
-    BigDecimal initialBalance = new BigDecimal("100.00");
-    BigDecimal depositAmount = new BigDecimal("50.00");
-
-    when(balanceService.getBalance(userId)).thenReturn(initialBalance);
-
-    transactionService.deposit(userId, depositAmount);
-
-    verify(database).createTransaction(userId, depositAmount, "DEPOSIT");
+    assertEquals("Invalid amount, must be grater than 1", exception.getMessage());
+    verifyNoInteractions(database);
   }
 
   @Test
-  void withdraw_ValidAmount_Success() {
+  void deposit_validAmount_Success() {
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("100.00"));
 
-    Long userId = 1L;
-    BigDecimal initialBalance = new BigDecimal("100.00");
-    BigDecimal withdrawAmount = new BigDecimal("50.00");
+    transactionService.deposit(TEST_USER_ID, new BigDecimal("50.00"));
 
-    when(balanceService.getBalance(userId)).thenReturn(initialBalance);
-
-    transactionService.withdraw(userId, withdrawAmount);
-
-    verify(database).createTransaction(userId, withdrawAmount, "WITHDRAW");
+    verify(database).createTransaction(TEST_USER_ID, new BigDecimal("50.00"), "DEPOSIT");
   }
 
   @Test
-  void withdraw_InsufficientFunds_ThrowsException() {
+  void withdraw_amountLessThanOne_ThrowsException() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> transactionService.withdraw(TEST_USER_ID, new BigDecimal("0.5")));
 
-    Long userId = 1L;
-    BigDecimal initialBalance = new BigDecimal("40.00");
-    BigDecimal withdrawAmount = new BigDecimal("50.00");
-
-    when(balanceService.getBalance(userId)).thenReturn(initialBalance);
-
-    assertThrows(
-        InsufficientFundsException.class,
-        () -> transactionService.withdraw(userId, withdrawAmount));
-
-    verify(database, never()).createTransaction(any(), any(), any());
+    assertEquals("Invalid amount, must be grater than 1", exception.getMessage());
+    verifyNoInteractions(database);
   }
 
   @Test
-  void transfer_ValidAmount_Success() {
+  void withdraw_insufficientBalance_ThrowsException() {
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("40.00"));
 
-    Long fromUserId = 1L;
-    Long toUserId = 2L;
-    BigDecimal fromBalance = new BigDecimal("100.00");
-    BigDecimal toBalance = new BigDecimal("50.00");
-    BigDecimal transferAmount = new BigDecimal("30.00");
+    InsufficientFundsException exception =
+        assertThrows(
+            InsufficientFundsException.class,
+            () -> transactionService.withdraw(TEST_USER_ID, new BigDecimal("50.00")));
 
-    when(balanceService.getBalance(fromUserId)).thenReturn(fromBalance);
-    when(balanceService.getBalance(toUserId)).thenReturn(toBalance);
-
-    transactionService.transfer(fromUserId, toUserId, transferAmount);
-
-    verify(database).performTransfer(fromUserId, toUserId, transferAmount);
+    assertEquals("Insufficient funds for withdrawal", exception.getMessage());
+    verify(balanceService).getBalance(TEST_USER_ID);
+    verifyNoInteractions(database);
   }
 
   @Test
-  void transfer_InsufficientFunds_ThrowsException() {
+  void withdraw_validAmount_Success() {
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("100.00"));
 
-    Long fromUserId = 1L;
-    Long toUserId = 2L;
-    BigDecimal fromBalance = new BigDecimal("20.00");
-    BigDecimal transferAmount = new BigDecimal("30.00");
+    transactionService.withdraw(TEST_USER_ID, new BigDecimal("50.00"));
 
-    when(balanceService.getBalance(fromUserId)).thenReturn(fromBalance);
+    verify(database).createTransaction(TEST_USER_ID, new BigDecimal("50.00"), "WITHDRAW");
+  }
 
-    assertThrows(
-        InsufficientFundsException.class,
-        () -> transactionService.transfer(fromUserId, toUserId, transferAmount));
+  @Test
+  void transfer_amountLessThanOne_ThrowsException() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> transactionService.transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("0.5")));
 
-    verify(database, never()).performTransfer(any(), any(), any());
+    assertEquals("Invalid amount, must be grater than 1", exception.getMessage());
+    verifyNoInteractions(database);
+  }
+
+  @Test
+  void transfer_negativeAmount_ThrowsException() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                transactionService.transfer(
+                    TEST_USER_ID, TARGET_USER_ID, new BigDecimal("-50.00")));
+
+    assertEquals("Transfer amount must be positive", exception.getMessage());
+    verifyNoInteractions(database);
+  }
+
+  @Test
+  void transfer_sameAccount_ThrowsException() {
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> transactionService.transfer(TEST_USER_ID, TEST_USER_ID, new BigDecimal("50.00")));
+
+    assertEquals("Cannot transfer to same account", exception.getMessage());
+    verifyNoInteractions(database);
+  }
+
+  @Test
+  void transfer_insufficientBalance_ThrowsException() {
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("40.00"));
+
+    InsufficientFundsException exception =
+        assertThrows(
+            InsufficientFundsException.class,
+            () ->
+                transactionService.transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("50.00")));
+
+    assertEquals("Insufficient funds for transfer", exception.getMessage());
+    verify(balanceService).getBalance(TEST_USER_ID);
+    verifyNoInteractions(database);
+  }
+
+  @Test
+  void transfer_validAmount_Success() {
+    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("100.00"));
+
+    transactionService.transfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("50.00"));
+
+    verify(database).performTransfer(TEST_USER_ID, TARGET_USER_ID, new BigDecimal("50.00"));
   }
 }

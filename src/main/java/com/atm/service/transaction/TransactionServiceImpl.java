@@ -33,6 +33,10 @@ public class TransactionServiceImpl implements TransactionService {
   public void withdraw(Long userId, BigDecimal amount) {
     log.info("Attempting to withdraw {} for user {}", amount, userId);
 
+    if (amount.compareTo(BigDecimal.ONE) <= 0) {
+      throw new IllegalArgumentException("Invalid amount, must be grater than 1");
+    }
+
     BigDecimal currentBalance = balanceService.getBalance(userId);
 
     if (currentBalance.compareTo(amount) < 0) {
@@ -41,10 +45,6 @@ public class TransactionServiceImpl implements TransactionService {
           currentBalance,
           amount);
       throw new InsufficientFundsException("Insufficient funds for withdrawal");
-    }
-
-    if (amount.compareTo(BigDecimal.ONE) <= 0) {
-      throw new IllegalArgumentException("Invalid amount, must be grater than 1");
     }
 
     BigDecimal newBalance = currentBalance.subtract(amount);
@@ -58,15 +58,6 @@ public class TransactionServiceImpl implements TransactionService {
   public void transfer(Long fromUserId, Long toUserId, BigDecimal amount) {
     log.info("Attempting to transfer {} from user {} to user {}", amount, fromUserId, toUserId);
 
-    BigDecimal fromBalance = balanceService.getBalance(fromUserId);
-    if (fromBalance.compareTo(amount) < 0) {
-      log.warn(
-          "Insufficient funds for transfer. Current balance: {}, Requested: {}",
-          fromBalance,
-          amount);
-      throw new InsufficientFundsException("Insufficient funds for transfer");
-    }
-
     if (amount.compareTo(BigDecimal.ZERO) <= 0) {
       throw new IllegalArgumentException("Transfer amount must be positive");
     }
@@ -77,6 +68,15 @@ public class TransactionServiceImpl implements TransactionService {
 
     if (fromUserId.equals(toUserId)) {
       throw new IllegalArgumentException("Cannot transfer to same account");
+    }
+
+    BigDecimal fromBalance = balanceService.getBalance(fromUserId);
+    if (fromBalance.compareTo(amount) < 0) {
+      log.warn(
+          "Insufficient funds for transfer. Current balance: {}, Requested: {}",
+          fromBalance,
+          amount);
+      throw new InsufficientFundsException("Insufficient funds for transfer");
     }
 
     database.performTransfer(fromUserId, toUserId, amount);

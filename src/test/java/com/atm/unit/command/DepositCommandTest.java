@@ -67,16 +67,16 @@ class DepositCommandTest {
 
   @Test
   void execute_hasActiveSession_invalidAmountFormat_ThrowsException() {
-      
-      Session session = mock(Session.class);
-      when(sessionHolder.getCurrentSession()).thenReturn(session);
-      when(session.getUserId()).thenReturn(TEST_USER_ID);
-      when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
-  
-      CommandException exception =
-          assertThrows(CommandException.class, () -> command.execute("-asd"));
-      assertEquals("Invalid amount format", exception.getMessage());
-      verifyNoInteractions(transactionService);
+
+    Session session = mock(Session.class);
+    when(sessionHolder.getCurrentSession()).thenReturn(session);
+    when(session.getUserId()).thenReturn(TEST_USER_ID);
+    when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
+
+    CommandException exception =
+        assertThrows(CommandException.class, () -> command.execute("-asd"));
+    assertEquals("Invalid amount format", exception.getMessage());
+    verifyNoInteractions(transactionService);
   }
 
   @Test
