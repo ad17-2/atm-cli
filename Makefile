@@ -12,7 +12,7 @@ clean:
 
 test:
 	@echo "Running tests..."
-	docker-compose -f docker-compose.test.yml up \
+	docker-compose -f docker-compose.test.yml up --build \
 		--abort-on-container-exit
 	docker-compose -f docker-compose.test.yml down -v
 	@echo "Tests completed!"

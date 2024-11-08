@@ -140,7 +140,7 @@ public class ATMCliIntegrationTest {
     assertOutputContains(outputLines, "Error: Invalid Credentials");
     assertOutputContains(outputLines, "Hello, testUser");
     assertOutputContains(outputLines, "Error: User already logged in. Please logout first.");
-    assertOutputContains(outputLines, "Error: Insufficient balance");
+    assertOutputContains(outputLines, "Error: Insufficient funds for withdrawal");
     assertOutputContains(outputLines, "Error: Invalid amount, must be grater than 1");
     assertOutputContains(outputLines, "Error: Invalid amount, must be grater than 1");
     assertOutputContains(outputLines, "Error: Invalid amount format");
