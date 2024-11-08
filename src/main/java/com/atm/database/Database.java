@@ -92,25 +92,6 @@ public class Database implements AutoCloseable {
         });
   }
 
-  public Optional<User> getUserById(Long userId) {
-    return transaction.executeInTransaction(
-        connection -> {
-          try (PreparedStatement pstmt =
-              connection.prepareStatement(PostgreSQLQueries.Users.GET_BY_ID)) {
-            pstmt.setLong(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-              if (rs.next()) {
-                return Optional.of(mapResultSetToUser(rs));
-              }
-            }
-            return Optional.empty();
-          } catch (SQLException e) {
-            log.error("Failed to get user by ID", e);
-            return Optional.empty();
-          }
-        });
-  }
-
   public void updateLastLogin(Long userId) {
     transaction.executeInTransaction(
         connection -> {

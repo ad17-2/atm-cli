@@ -97,14 +97,10 @@ public final class PostgreSQLQueries {
 
     // Read
     static final String GET_BY_USERNAME = "SELECT * FROM users WHERE username = ?";
-    static final String GET_BY_ID = "SELECT * FROM users WHERE id = ?";
 
     // Update
     static final String UPDATE_LAST_LOGIN =
         "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?";
-
-    // Delete
-    static final String DELETE = "DELETE FROM users WHERE id = ?";
   }
 
   public static final class Balances {
@@ -129,9 +125,6 @@ public final class PostgreSQLQueries {
             + "END, "
             + "last_updated = CURRENT_TIMESTAMP "
             + "WHERE user_id IN (?, ?)";
-
-    static final String CHECK_SUFFICIENT_BALANCE =
-        "SELECT balance >= ? as sufficient " + "FROM balances WHERE user_id = ? FOR UPDATE";
   }
 
   public static final class Sessions {
@@ -160,29 +153,12 @@ public final class PostgreSQLQueries {
     static final String DELETE = "DELETE FROM sessions WHERE id = ?";
 
     static final String CLEANUP_USER_SESSIONS = "DELETE FROM sessions WHERE user_id = ?";
-
-    static final String CLEANUP_STALE =
-        "DELETE FROM sessions WHERE expires_at <= CURRENT_TIMESTAMP";
   }
 
   public static final class Transactions {
-    // Create with balance check
     static final String CREATE =
         "INSERT INTO transactions (from_user_id, to_user_id, amount, type) "
             + "VALUES (?, ?, ?, ?) "
             + "RETURNING id";
-
-    // Read
-    static final String GET_BY_ID = "SELECT * FROM transactions WHERE id = ?";
-
-    static final String GET_BY_USER =
-        "SELECT * FROM transactions "
-            + "WHERE from_user_id = ? OR to_user_id = ? "
-            + "ORDER BY created_at DESC";
-
-    static final String GET_RECENT =
-        "SELECT * FROM transactions "
-            + "WHERE (from_user_id = ? OR to_user_id = ?) "
-            + "ORDER BY created_at DESC LIMIT ?";
   }
 }
