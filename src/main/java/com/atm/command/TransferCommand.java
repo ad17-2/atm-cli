@@ -1,14 +1,15 @@
 package com.atm.command;
 
+import java.math.BigDecimal;
+import java.util.Optional;
+
 import com.atm.exception.CommandException;
 import com.atm.model.Session;
 import com.atm.model.User;
-import com.atm.service.balance.BalanceService;
 import com.atm.service.session.SessionService;
 import com.atm.service.transaction.TransactionService;
 import com.atm.service.user.UserService;
-import java.math.BigDecimal;
-import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,7 +19,6 @@ public class TransferCommand implements Command {
 
   private final UserService userService;
   private final TransactionService transactionService;
-  private final BalanceService balanceService;
   private final SessionHolder sessionHolder;
   private final SessionService sessionService;
 
@@ -59,12 +59,6 @@ public class TransferCommand implements Command {
 
       if (!targetUser.isPresent()) {
         throw new CommandException("User not found");
-      }
-
-      BigDecimal balance = balanceService.getBalance(userId);
-
-      if (balance.compareTo(transferAmount) < 0) {
-        throw new CommandException("Insufficient balance");
       }
 
       transactionService.transfer(userId, targetUser.get().getId(), transferAmount);

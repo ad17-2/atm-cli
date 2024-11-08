@@ -55,7 +55,7 @@ public class ATMCli {
     commands.put(
         "transfer",
         new TransferCommand(
-            userService, transactionService, balanceService, sessionHolder, sessionService));
+            userService, transactionService, sessionHolder, sessionService));
     commands.put("balance", new BalanceCommand(balanceService, sessionHolder, sessionService));
   }
 

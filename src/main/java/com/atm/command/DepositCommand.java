@@ -42,10 +42,12 @@ public class DepositCommand implements Command {
         throw new CommandException("No active session, Please login first!");
       }
 
-      BigDecimal depositAmount = new BigDecimal(args[0]);
+      BigDecimal depositAmount = null;
 
-      if (depositAmount.compareTo(BigDecimal.ONE) <= 0) {
-        throw new CommandException("Invalid amount, must be grater than 1");
+      try {
+        depositAmount = new BigDecimal(args[1]);
+      } catch (NumberFormatException e) {
+        throw new CommandException("Invalid amount format");
       }
 
       log.info("DepositCommand: execute: user : {}", userId);
@@ -56,8 +58,8 @@ public class DepositCommand implements Command {
       System.out.println("Deposit successful. New balance: $" + balance);
     } catch (CommandException e) {
       throw e;
-    } catch (NumberFormatException e) {
-      throw new CommandException("Invalid amount format");
+    } catch (IllegalArgumentException e) {
+      throw new CommandException(e.getMessage());
     } catch (Exception e) {
       throw new CommandException("Failed to deposit money");
     }

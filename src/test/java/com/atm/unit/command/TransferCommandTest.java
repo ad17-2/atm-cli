@@ -1,20 +1,18 @@
 package com.atm.unit.command;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import com.atm.command.SessionHolder;
-import com.atm.command.TransferCommand;
-import com.atm.exception.CommandException;
-import com.atm.model.Session;
-import com.atm.model.User;
-import com.atm.service.balance.BalanceService;
-import com.atm.service.session.SessionService;
-import com.atm.service.transaction.TransactionService;
-import com.atm.service.user.UserService;
 import java.math.BigDecimal;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +20,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+
+import com.atm.command.SessionHolder;
+import com.atm.command.TransferCommand;
+import com.atm.exception.CommandException;
+import com.atm.model.Session;
+import com.atm.model.User;
+import com.atm.service.session.SessionService;
+import com.atm.service.transaction.TransactionService;
+import com.atm.service.user.UserService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -35,7 +42,6 @@ class TransferCommandTest {
   @Mock private TransactionService transactionService;
   @Mock private UserService userService;
   @Mock private SessionHolder sessionHolder;
-  @Mock private BalanceService balanceService;
   @Mock private SessionService sessionService;
 
   private TransferCommand transferCommand;
@@ -44,7 +50,7 @@ class TransferCommandTest {
   void setUp() {
     transferCommand =
         new TransferCommand(
-            userService, transactionService, balanceService, sessionHolder, sessionService);
+            userService, transactionService, sessionHolder, sessionService);
   }
 
   @Test
@@ -57,13 +63,11 @@ class TransferCommandTest {
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
     when(targetUser.getId()).thenReturn(TARGET_USER_ID);
-    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("500"));
 
     transferCommand.execute(TARGET_USERNAME, "100");
 
     verify(sessionService).hasActiveSession(TEST_USER_ID);
     verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
-    verify(balanceService).getBalance(TEST_USER_ID);
   }
 
   @Test
@@ -114,14 +118,12 @@ class TransferCommandTest {
     when(sessionHolder.getCurrentSession()).thenReturn(session);
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
-    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("50"));
-
+    
     CommandException exception =
         assertThrows(CommandException.class, () -> transferCommand.execute(TARGET_USERNAME, "100"));
     assertEquals("Insufficient balance", exception.getMessage());
 
     verify(sessionService).hasActiveSession(TEST_USER_ID);
-    verify(balanceService).getBalance(TEST_USER_ID);
     verify(transactionService, never()).transfer(any(), any(), any());
   }
 
@@ -182,7 +184,6 @@ class TransferCommandTest {
     when(sessionService.hasActiveSession(TEST_USER_ID)).thenReturn(true);
     when(userService.getUserByUsername(TARGET_USERNAME)).thenReturn(Optional.of(targetUser));
     when(targetUser.getId()).thenReturn(TARGET_USER_ID);
-    when(balanceService.getBalance(TEST_USER_ID)).thenReturn(new BigDecimal("500"));
     doThrow(new RuntimeException("Transaction failed"))
         .when(transactionService)
         .transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
@@ -192,7 +193,6 @@ class TransferCommandTest {
     assertEquals("Failed to transfer money", exception.getMessage());
 
     verify(sessionService).hasActiveSession(TEST_USER_ID);
-    verify(balanceService).getBalance(TEST_USER_ID);
     verify(transactionService).transfer(TEST_USER_ID, TARGET_USER_ID, VALID_AMOUNT);
   }
 }

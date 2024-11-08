@@ -18,6 +18,10 @@ public class TransactionServiceImpl implements TransactionService {
     try {
       log.info("Attempting to deposit {} for user {}", amount, userId);
 
+      if (amount.compareTo(BigDecimal.ONE) <= 0) {
+        throw new IllegalArgumentException("Invalid amount, must be grater than 1");
+      }
+
       BigDecimal currentBalance = balanceService.getBalance(userId);
       BigDecimal newBalance = currentBalance.add(amount);
 
@@ -34,12 +38,17 @@ public class TransactionServiceImpl implements TransactionService {
     log.info("Attempting to withdraw {} for user {}", amount, userId);
 
     BigDecimal currentBalance = balanceService.getBalance(userId);
+
     if (currentBalance.compareTo(amount) < 0) {
       log.warn(
           "Insufficient funds for withdrawal. Current balance: {}, Requested: {}",
           currentBalance,
           amount);
       throw new InsufficientFundsException("Insufficient funds for withdrawal");
+    }
+
+    if (amount.compareTo(BigDecimal.ONE) <= 0) {
+      throw new IllegalArgumentException("Invalid amount, must be grater than 1");
     }
 
     BigDecimal newBalance = currentBalance.subtract(amount);

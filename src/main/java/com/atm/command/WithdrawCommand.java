@@ -41,19 +41,16 @@ public class WithdrawCommand implements Command {
         sessionHolder.terminateSession();
         throw new CommandException("No active session, Please login first!");
       }
-      BigDecimal withdrawAmount = new BigDecimal(args[0]);
 
-      if (withdrawAmount.compareTo(BigDecimal.ONE) <= 0) {
-        throw new CommandException("Invalid amount, must be grater than 1");
+      BigDecimal withdrawAmount = null;
+
+      try {
+        withdrawAmount = new BigDecimal(args[1]);
+      } catch (NumberFormatException e) {
+        throw new CommandException("Invalid amount format");
       }
 
       log.info("WithdrawCommand: execute: user : {}", userId);
-
-      BigDecimal balance = balanceService.getBalance(userId);
-
-      if (balance.compareTo(withdrawAmount) < 0) {
-        throw new CommandException("Insufficient balance");
-      }
 
       transactionService.withdraw(userId, withdrawAmount);
 
@@ -62,8 +59,8 @@ public class WithdrawCommand implements Command {
       System.out.println("Withdraw successful. New balance: $" + newBalance);
     } catch (CommandException e) {
       throw e;
-    } catch (NumberFormatException e) {
-      throw new CommandException("Invalid amount format");
+    } catch (IllegalArgumentException e) {
+      throw new CommandException(e.getMessage());
     } catch (Exception e) {
       throw new CommandException("Failed to withdraw money");
     }
