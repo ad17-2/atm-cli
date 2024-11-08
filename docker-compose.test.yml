@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  test-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=atm_cli_test
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  integration-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - DB_URL=jdbc:postgresql://test-db:5432/atm_cli_test
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      test-db:
+        condition: service_healthy
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

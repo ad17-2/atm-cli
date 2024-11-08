@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/atm_cli
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    stdin_open: true
+    tty: true
+    container_name: atm-cli-app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=atm_cli
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  maven-repo:
+
+networks:
+  app-network:
+    driver: bridge

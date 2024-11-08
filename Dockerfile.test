@@ -1,0 +1,15 @@
+FROM maven:3.8.4-openjdk-11
+
+WORKDIR /app
+
+COPY pom.xml .
+
+RUN mvn dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline
+
+COPY src ./src
+
+CMD ["mvn", "verify", \
+     "-DDB_URL=jdbc:postgresql://test-db:5432/atm_cli_test", \
+     "-DDB_USERNAME=postgres", \
+     "-DDB_PASSWORD=postgres"]
