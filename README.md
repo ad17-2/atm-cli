@@ -178,23 +178,23 @@ Made to cater the needs of user to Transfer to another user
 
 #### Additional Transfer Design Considerations:
 
-###### User Psychology
+#### User Psychology
 
 - Preventing anxiety from user side on "overspending" or "falling into debt" when they overtransfer
 
-###### Technical
+#### Technical
 
 - Simpler logic : balance check is a yes / no question.
 - There's no need for complex debt calculation system, i.e interest, grace periods, late fee, etc
 - Easier to rollbacks
 - There's no need for the system to maintain debt relationships between users, i believe its more appropriate for the bank it self to maintain the debt user <-> bank, not user <-> user
 
-###### Risk Management
+#### Risk Management
 
 - Zero risk of user defaulting their balance
 - Bank needs to asses their credit first via credit scoring before lending user money
 
-###### Clarity
+#### Clarity
 
 - Users always know exactly how much they can transfer
 
