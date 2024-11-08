@@ -205,3 +205,22 @@ Ensures only one user is logged in at a time, with a timeout for inactive sessio
 ### Transaction Logging
 
 Records transactions to support financial tracking and facilitate dispute resolution.
+
+## Technical Spec
+
+### Language
+
+- Java 11
+
+### Database
+
+- PostgreSQL
+
+### Developer Tools
+
+- Docker
+- Makefile
+
+### Logging
+
+- Logback
