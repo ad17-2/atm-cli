@@ -215,6 +215,9 @@ Records transactions to support financial tracking and facilitate dispute resolu
 ### Database
 
 - PostgreSQL
+  - Reason
+    - MVCC
+    - Offers Numeric data type (mantains exact precision)
 
 ### Developer Tools
 
