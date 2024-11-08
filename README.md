@@ -224,3 +224,22 @@ Records transactions to support financial tracking and facilitate dispute resolu
 ### Logging
 
 - Logback
+
+## Testing
+
+both are run with
+
+```bash
+make test
+```
+
+### Unit Testing
+
+- Service Layer
+- Command Layer
+- Model Layer
+
+### Integration Testing
+
+- Database Layer
+- CLI Layer
