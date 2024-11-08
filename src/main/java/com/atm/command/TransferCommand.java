@@ -1,6 +1,7 @@
 package com.atm.command;
 
 import com.atm.exception.CommandException;
+import com.atm.exception.InsufficientFundsException;
 import com.atm.model.Session;
 import com.atm.model.User;
 import com.atm.service.session.SessionService;
@@ -63,6 +64,8 @@ public class TransferCommand implements Command {
       System.out.println("Transfer successful.");
     } catch (CommandException e) {
       throw e;
+    } catch (InsufficientFundsException e) {
+      throw new CommandException(e.getMessage());
     } catch (IllegalArgumentException e) {
       throw new CommandException(e.getMessage());
     } catch (Exception e) {

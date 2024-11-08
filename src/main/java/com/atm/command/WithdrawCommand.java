@@ -1,6 +1,7 @@
 package com.atm.command;
 
 import com.atm.exception.CommandException;
+import com.atm.exception.InsufficientFundsException;
 import com.atm.model.Session;
 import com.atm.service.balance.BalanceService;
 import com.atm.service.session.SessionService;
@@ -59,6 +60,8 @@ public class WithdrawCommand implements Command {
       System.out.println("Withdraw successful. New balance: $" + newBalance);
     } catch (CommandException e) {
       throw e;
+    } catch (InsufficientFundsException e) {
+      throw new CommandException(e.getMessage());
     } catch (IllegalArgumentException e) {
       throw new CommandException(e.getMessage());
     } catch (Exception e) {
