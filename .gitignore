@@ -22,11 +22,6 @@ target/
 # macOS
 .DS_Store
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
 # Project specific
 *.db
 *.log
